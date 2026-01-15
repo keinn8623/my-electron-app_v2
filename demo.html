@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>奥数专项成绩分析</title>
+    <!-- 引入 Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- 引入 Chart.js 用于绘图 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0d6efd 0%, #20c997 100%);
+            color: white;
+            padding: 1.5rem 0;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+            border: none;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .subject-table th {
+            background-color: #e9ecef;
+            font-weight: bold;
+        }
+
+        .improvement-up {
+            color: #28a745;
+        }
+
+        .improvement-down {
+            color: #dc3545;
+        }
+
+        .section-header {
+            border-left: 4px solid #0d6efd;
+            padding-left: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .score-danger {
+            color: #dc3545 !important;
+        }
+
+        .body-size {
+            font-size: 9px;
+        }
+
+        .head-size {
+            font-size: 10.5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container-fluid">
+        <!-- 页面头部 -->
+        <div class="row">
+            <div class="col-12 header text-center">
+                <h3> 卓鸣课堂</h3>
+                <h4>{{className}}成绩分析报告</h4>
+                <p class="lead">{{studentName}} | 分析周期：{{semester}} {{examNames.length}}次测验</p>
+            </div>
+        </div>
+
+        <!-- 图表区域：历次成绩与平均分对比 -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="section-header"> 历次测验成绩趋势对比</h5>
+                    </div>
+                    <div id="chart-data" style="display: none;">
+                        <div id="examNames">{{examNames}}</div>
+                        <div id="avgScores">{{avgScores}}</div>
+                        <div id="studentScores">{{studentScores}}</div>
+                        <div id="studentsData">{{studentsData}}</div>
+                        <div id="questionTypes">{{questionTypes}}</div>
+                        <div id="questionTypeCount">{{questionTypeCount}}</div>
+                        <div id="standardScores">{{standardScores}}</div>
+                    </div>
+
+                    <div class="card-body">
+                        <canvas id="trendChart" height="100"
+                            style="width: 95%; height: 300px; margin: 0 auto;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 整体正确率雷达图 -->
+        <!-- <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="section-header">{{examNames.length}}次考试总体正确率</h5>
+                    </div>
+                    <div class="card-body d-flex flex-wrap">
+                        <div style="width: 95%; padding: 10px;">
+                            <canvas id="radarChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> -->
+
+
+        <!-- 总体成绩分析 -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 section-header"> 总体成绩分析</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle text-center">
+                                <thead class="table-dark head-size">
+                                    <tr>
+                                        <th>测验</th>
+                                        <th>我的成绩</th>
+                                        <th>平均分</th>
+                                        <th>分差</th>
+                                        <th>排名</th>
+                                        <!-- <th>标准分</th> -->
+                                        <th>状态</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="body-size">
+                                    {% for data in studentsData %}
+                                    {% set index = loop.index0 %}
+                                    <tr>
+                                        <td>{{examNames[index]}}</td>
+                                        {% set diff = (studentScores[index] - avgScores[index]) | round(2) %}
+                                        {% if diff >= 0 %}
+                                        <td class="text-success"><strong>{{studentScores[index]}}</strong></td>
+                                        {% else %}
+                                        <td><strong>{{studentScores[index]}}</strong></td>
+                                        {% endif %}
+                                        <td>{{avgScores[index]}}</td>
+                                        {% if diff >= 0 %}
+                                        <td class="text-success">+{{diff}}</td>
+                                        {% else %}
+                                        <td class="text-danger">{{diff}}</td>
+                                        {% endif %}
+                                        <td>{{studentsData[index].studentScore['排名']}}</td>
+                                        <!-- {% if diff >= 0 %}
+                                        <td class="text-success">{{studentsData[index].studentScore['标准分']}}</td>
+                                        {% else %}
+                                        <td class="text-danger">{{studentsData[index].studentScore['标准分']}}</td>
+                                        {% endif %} -->
+                                        <td>
+                                            {% if diff > 5 %}
+                                            <span class="badge bg-primary text-white">卓越</span>
+                                            {% elif diff >= 0 %}
+                                            <span class="badge bg-success">优秀</span>
+                                            {% elif -10 <= diff < 0 %} <span class="badge bg-warning text-dark">
+                                                持平</span>
+                                                {% else %}
+                                                <span class="badge bg-danger">待加强</span>
+                                                {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 详细数据与差异分析表格 -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 section-header"> 模块正确率差异分析</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle text-center">
+                                <thead class="table-dark head-size">
+                                    <!-- 字体上下居中 -->
+                                    <tr>
+                                        <th style="text-align: center; vertical-align: middle;">测验</th>
+                                        <th style="text-align: center; vertical-align: middle; padding: 4px 8px;">计算
+                                        </th>
+                                        <th style="text-align: center; vertical-align: middle; padding: 4px 8px;">应用
+                                        </th>
+                                        <th style="text-align: center; vertical-align: middle; padding: 4px 8px;">行程
+                                        </th>
+                                        <th style="text-align: center; vertical-align: middle; padding: 4px 8px;">计数
+                                        </th>
+                                        <th style="text-align: center; vertical-align: middle; padding: 4px 8px;">几何
+                                        </th>
+                                        <th style="text-align: center; vertical-align: middle; padding: 4px 8px;">组合
+                                        </th>
+                                        <th style="text-align: center; vertical-align: middle; padding: 4px 8px;">数论
+                                        </th>
+                                        <th style="text-align: center; vertical-align: middle;">主要失分点</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="body-size">
+                                    {% for data in studentsData %}
+                                    {% set index = loop.index0 %}
+                                    <tr>
+                                        <td>{{examNames[index]}}</td>
+
+                                        {% set weakPoints = [] %}
+                                        <!-- 计算 -->
+                                        {% set calculation = data.studentScore['计算正确率'] %}
+                                        {% if calculation == '' or calculation == '-' %}
+                                        <td>{{calculation}}</td>
+                                        {% else %}
+                                        {% set calculationValue = calculation|replace('%', '')|float %}
+                                        {% if calculationValue > 50 %}
+                                        <td class="text-success">{{calculation}}</td>
+                                        {% elif 40 <= calculationValue < 50 %} <td>{{calculation}}</td>
+                                            {% set weakPoints = weakPoints.concat(['计算']) %}
+                                            {% else %}
+                                            <td class="score-danger">{{calculation}}</td>
+                                            {% endif %}
+                                            {% endif %}
+                                            <!-- 应用 -->
+                                            {% set application = data.studentScore['应用正确率'] %}
+                                            {% if application == '' or application == '-' %}
+                                            <td>{{application}}</td>
+                                            {% else %}
+                                            {% set applicationValue = application|replace('%', '')|float %}
+                                            {% if applicationValue > 50 %}
+                                            <td class="text-success">{{application}}</td>
+                                            {% elif 40 <= applicationValue < 50 %} <td>{{application}}</td>
+                                                {% set weakPoints = weakPoints.concat(['应用']) %}
+                                                {% else %}
+                                                <td class="score-danger">{{application}}</td>
+                                                {% endif %}
+                                                {% endif %}
+                                                <!-- 行程 -->
+                                                {% set trip = data.studentScore['行程正确率'] %}
+                                                {% if trip == '' or trip == '-' %}
+                                                <td>{{trip}}</td>
+                                                {% else %}
+                                                {% set tripValue = trip|replace('%', '')|float %}
+                                                {% if tripValue > 50 %}
+                                                <td class="text-success">{{trip}}</td>
+                                                {% elif 40 <= tripValue < 50 %} <td>{{trip}}</td>
+                                                    {% set weakPoints = weakPoints.concat(['行程']) %}
+                                                    {% else %}
+                                                    <td class="score-danger">{{trip}}</td>
+                                                    {% endif %}
+                                                    {% endif %}
+                                                    <!-- 计数 -->
+                                                    {% set count = data.studentScore['计数正确率'] %}
+                                                    {% if count == '' or count == '-' %}
+                                                    <td>{{count}}</td>
+                                                    {% else %}
+                                                    {% set countValue = count|replace('%', '')|float %}
+                                                    {% if countValue > 50 %}
+                                                    <td class="text-success">{{count}}</td>
+                                                    {% elif 40 <= countValue < 50 %} <td>{{count}}</td>
+                                                        {% set weakPoints = weakPoints.concat(['计数']) %}
+                                                        {% else %}
+                                                        <td class="score-danger">{{count}}</td>
+                                                        {% endif %}
+                                                        {% endif %}
+                                                        <!-- 几何 -->
+                                                        {% set geoTheory = data.studentScore['几何正确率'] %}
+                                                        {% if geoTheory == '' or geoTheory == '-' %}
+                                                        <td>{{geoTheory}}</td>
+                                                        {% else %}
+                                                        {% set geoTheoryValue = geoTheory|replace('%', '')|float %}
+                                                        {% if geoTheoryValue > 50 %}
+                                                        <td class="text-success">{{geoTheory}}</td>
+                                                        {% elif 40 <= geoTheoryValue < 50 %} <td>{{geoTheory}}</td>
+                                                            {% set weakPoints = weakPoints.concat(['几何']) %}
+                                                            {% else %}
+                                                            <td class="score-danger">{{geoTheory}}</td>
+                                                            {% endif %}
+                                                            {% endif %}
+                                                            <!-- 组合 -->
+                                                            {% set combined = data.studentScore['组合正确率'] %}
+                                                            {% if combined == '' or combined == '-' %}
+                                                            <td>{{combined}}</td>
+                                                            {% else %}
+                                                            {% set combinedValue = combined|replace('%', '')|float %}
+                                                            {% if combinedValue > 50 %}
+                                                            <td class="text-success">{{combined}}</td>
+                                                            {% elif 40 <= combinedValue < 50 %} <td>{{combined}}</td>
+                                                                {% set weakPoints = weakPoints.concat(['组合']) %}
+                                                                {% else %}
+                                                                <td class="score-danger">{{combined}}</td>
+                                                                {% endif %}
+                                                                {% endif %}
+                                                                <!-- 数论 -->
+                                                                {% set numTheory = data.studentScore['数论正确率'] %}
+                                                                {% if numTheory == '' or numTheory == '-' %}
+                                                                <td>{{numTheory}}</td>
+                                                                {% else %}
+                                                                {% set numTheoryValue = numTheory|replace('%', '')|float
+                                                                %}
+                                                                {% if numTheoryValue > 50 %}
+                                                                <td class="text-success">{{numTheory}}</td>
+                                                                {% elif 40 <= numTheoryValue < 50 %} <td>{{numTheory}}
+                                                                    </td>
+                                                                    {% set weakPoints = weakPoints.concat(['数论']) %}
+                                                                    {% else %}
+                                                                    <td class="score-danger">{{numTheory}}</td>
+                                                                    {% endif %}
+                                                                    {% endif %}
+
+                                                                    <td>{{weakPoints|join('、')}}</td>
+                                                                    <!-- 清空weakPoints -->
+                                                                    {% set weakPoints = [] %}
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <canvas id="bilateralChart" height="100"
+                            style="width: 95%; height: 300px; margin: 0 auto;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div> -->
+
+        <!-- 强制分页 -->
+        <div class="row" style="break-inside: avoid;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="section-header"> 错误题型综合分析</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="barChart" height="100" style="width: 95%; height: 300px; margin: 0 auto;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 奥数专项题型分析 -->
+        <!-- <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="section-header"> 奥数题型得分率分析 (最近一次)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-4 mb-3">
+                                <div class="p-3 bg-light rounded">
+                                    <h6>基础题 (1-5题)</h6>
+                                    <div class="progress mb-2" style="height: 20px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: 95%;">95%</div>
+                                    </div>
+                                    <small>满分策略：必须全对</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="p-3 bg-light rounded">
+                                    <h6>中档题 (6-8题)</h6>
+                                    <div class="progress mb-2" style="height: 20px;">
+                                        <div class="progress-bar bg-warning" role="progressbar" style="width: 70%;">70%</div>
+                                    </div>
+                                    <small>提升空间：思维拓展</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="p-3 bg-light rounded">
+                                    <h6>压轴题 (9-10题)</h6>
+                                    <div class="progress mb-2" style="height: 20px;">
+                                        <div class="progress-bar bg-info" role="progressbar" style="width: 50%;">50%</div>
+                                    </div>
+                                    <small>攻坚重点：分类讨论</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> -->
+
+        <!-- 总结与建议 -->
+        <!-- <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="section-header"> 分析总结与提升建议</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul>
+                            <li> <strong>优势：</strong> 基础非常扎实，在基础题部分保持了极高的正确率，且近期成绩稳步上升，已连续3次高于班级平均分。</li>
+                            <li>️ <strong>待提升：</strong> 压轴题（难题）的突破能力仍需加强。在满分120的试卷中，通常有20分的难题区分度，目前在此部分丢失了约一半分数。</li>
+                            <li> <strong>建议：</strong> 
+                                <ol>
+                                    <li>针对<strong>数论</strong>和<strong>组合数学</strong>进行专题训练。</li>
+                                    <li>学习并整理常见的<strong>几何模型</strong>（如共边定理、燕尾模型等）。</li>
+                                    <li>每周精做1-2道高难度压轴题，并尝试写出完整的证明过程。</li>
+                                </ol>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div> -->
+
+    </div>
+
+    <!-- JavaScript 代码 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // 接收demo.html传递的examNames, avgScores, studentScores
+            const examNames = document.getElementById('examNames').textContent.split(',');
+            const avgScores = document.getElementById('avgScores').textContent.split(',').map(score => parseFloat(score) || 0);
+            const studentScores = document.getElementById('studentScores').textContent.split(',').map(score => parseFloat(score) || 0);
+
+            // 1. 历次成绩趋势图 (折线图)
+            const trendCtx = document.getElementById('trendChart').getContext('2d');
+            new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: examNames,
+                    datasets: [
+                        {
+                            label: '我的成绩',
+                            data: studentScores,
+                            borderColor: '#fd7e14',
+                            backgroundColor: 'rgba(253, 126, 20, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: '班级平均分',
+                            data: avgScores,
+                            borderColor: '#6c757d',
+                            borderDash: [5, 5], // 虚线
+                            backgroundColor: 'rgba(108, 117, 125, 0.05)',
+                            tension: 0.1,
+                            fill: true
+                        },
+                        // {
+                        //     label: '复试线',
+                        //     data: [70,60,55,88,75,80,85,77,82,88,90,84,84,76,75,71],
+                        //     borderColor: '#28a745',
+                        //     borderDash: [5, 5], // 虚线
+                        //     backgroundColor: 'green',
+                        //     tension: 0.1,
+                        //     fill: false
+                        // }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    devicePixelRatio: 2,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            callbacks: {
+                                // 自定义提示框，显示分差
+                                afterLabel: function (context) {
+                                    const myScore = context.parsed.y;
+                                    const avgScore = context.datasetIndex === 0 ?
+                                        context.chart.data.datasets[1].data[context.dataIndex] :
+                                        context.chart.data.datasets[0].data[context.dataIndex];
+                                    const diff = (myScore - avgScore).toFixed(1);
+                                    return `与平均分差异: ${diff > 0 ? '+' : ''}${diff} 分`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 10,
+                            max: 150,
+                            title: {
+                                display: false
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 创建一个雷达图
+            // const radarCtx = document.getElementById('radarChart').getContext('2d');
+            // new Chart(radarCtx, {
+            //     type: 'radar',
+            //     data: {
+            //         labels: ['计算', '应用', '几何', '行程', '计数', '组合', '数论'],
+            //         datasets: [
+            //             {
+            //                 label: '我的成绩',
+            //                 data: [80, 75, 90, 85, 78, 82, 88],
+            //                 backgroundColor: 'rgba(253, 126, 20, 0.2)',
+            //                 borderColor: '#fd7e14',
+            //                 borderWidth: 2
+            //             },
+            //             {
+            //                 label: '班级平均分',
+            //                 data: [75, 80, 85, 82, 88, 90, 84],
+            //                 backgroundColor: 'rgba(108, 117, 125, 0.2)',
+            //                 borderColor: '#6c757d',
+            //                 borderWidth: 2
+            //             }
+            //         ]
+            //     },
+            //     options: {
+            //         responsive: true,
+            //         maintainAspectRatio: false,
+            //         devicePixelRatio: 2,
+            //         plugins: {
+            //             legend: {
+            //                 position: 'top',
+            //             },
+            //             tooltip: {
+            //                 mode: 'index',
+            //                 callbacks: {
+            //                     // 自定义提示框，显示分差
+            //                     afterLabel: function(context) {
+            //                         const myScore = context.parsed.y;
+            //                         const avgScore = context.datasetIndex === 0 ? 
+            //                             context.chart.data.datasets[1].data[context.dataIndex] : 
+            //                             context.chart.data.datasets[0].data[context.dataIndex];
+            //                         const diff = (myScore - avgScore).toFixed(1);
+            //                         return `与平均分差异: ${diff > 0 ? '+' : ''}${diff} 分`;
+            //                     }
+            //                 }
+            //              }
+            //         },
+            //         scales: {
+            //             r: {
+            //                 beginAtZero: false,
+            //                 min: 0,
+            //                 max: 100,
+            //                 grid: {
+            //                     display: false
+            //                 },
+            //                 angleLines: {
+            //                     display: true
+            //                 }
+            //             }
+            //         }
+            //     }
+            // });
+
+
+
+
+
+            // 创建一个柱状图
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            // 从DOM元素中读取questionTypes数据
+            const questionTypes = document.getElementById('questionTypes').textContent.split(',').map(type => type.trim());
+            // 从DOM元素中读取questionTypeCount数据
+            const questionTypeCount = document.getElementById('questionTypeCount').textContent.split(',').map(count => parseInt(count.trim()));
+
+            // 只有当有数据时才创建图表
+            if (questionTypes.length > 0) {
+                new Chart(barCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: questionTypes,
+                        datasets: [
+                            {
+                                label: '错误题型个数',
+                                data: questionTypeCount,
+                                backgroundColor: 'rgba(253, 126, 20, 0.2)',
+                                borderColor: '#fd7e14',
+                                borderWidth: 2
+                            }
+                        ]
+                    },
+                    options: {
+                        indexAxis: 'y', // 将柱状图转为横向
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        devicePixelRatio: 2,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                mode: 'index'
+                            },
+                            datalabels: {
+                                display: true, // 显示标签
+                                color: 'black', // 字体颜色
+                                font: {
+                                    weight: 'bold',
+                                    size: 14
+                                },
+                                // 位置：'start', 'end', 'center', 'top', 'bottom'
+                                // 对于横向柱状图，'end' 通常在柱右侧，'start' 在柱左侧
+                                align: 'end',
+                                anchor: 'end',
+                                // 格式化显示内容，例如添加单位
+                                formatter: function(value, context) {
+                                    return value + '个';
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                grid: {
+                                    display: true
+                                },
+                                ticks: {
+                                    stepSize: 1,
+                                    precision: 0,
+                                    callback: function(value) {
+                                        return value === parseInt(value) ? value : '';
+                                    }
+                                }
+                            },
+                            y: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                // 如果没有数据，显示提示信息
+                const barChartContainer = document.getElementById('barChart').parentElement;
+                barChartContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">暂无错误题型数据</div>';
+            }
+
+
+            // // bilateralChart - 正负柱状图
+            // const ctx = document.getElementById('bilateralChart').getContext('2d');
+
+            // // 从DOM元素中读取standardScores数据
+            // const standardScores = document.getElementById('standardScores').textContent.split(',').map(count => parseInt(count.trim()));
+            // const standardScoresValue = Math.max(...standardScores, ...standardScores.map(Math.abs));
+            
+            //     const padding = 1.5;
+            //     const yAxisMax = standardScoresValue * padding;
+            //     const yAxisMin = -(standardScoresValue * padding);
+            //     new Chart(ctx, {
+            //         type: 'bar',
+            //         data: {
+            //             labels: examNames,
+            //             datasets: [
+            //                 {
+            //                     label: '标准分',
+            //                     data: standardScores,
+            //                     backgroundColor: function (context) {
+            //                         // 根据数值正负动态设置颜色（绿色正，红色负）
+            //                         const value = context.dataset.data[context.dataIndex];
+            //                         return value >= 0 ? 'rgba(75, 192, 192, 0.6)' : 'rgba(255, 99, 132, 0.6)';
+            //                     },
+            //                     borderWidth: 2
+            //                 },
+            //             ]
+            //         },
+            //         options: {
+            //             responsive: true,
+            //             maintainAspectRatio: false,
+            //             devicePixelRatio: 2,
+            //             plugins: {
+            //                 legend: {
+            //                     position: 'top',
+            //                 },
+            //                 tooltip: {
+            //                     mode: 'index'
+            //                 }
+            //             },
+            //             scales: {
+            //                 y: {
+            //                     min: yAxisMin,
+            //                     max: yAxisMax,
+            //                     grid: {
+            //                         display: true,
+            //                         color: function(context) {
+            //                             return context.tick.value === 0 ? 'black' : 'rgba(200, 200, 200, 0.5)';
+            //                         },
+            //                         lineWidth: function(context) {
+            //                             return context.tick.value === 0 ? 2 : 1;
+            //                         },
+            //                         drawTicks: true,
+            //                         drawOnChartArea: true,
+            //                     },
+            //                     ticks: {
+            //                         stepSize: 0.1,
+            //                     }
+            //                 },
+            //                 x: {
+            //                     grid: {
+            //                         display: false
+            //                     }
+            //                 }
+            //             }
+            //         }
+            //     });
+            
+            
+
+
+
+        });
+
+
+
+    </script>
+</body>
+
+</html>

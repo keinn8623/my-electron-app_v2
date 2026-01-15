@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学生成绩分析系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            min-width: 1000px;
+            display: flex;
+            gap: 20px;
+        }
+        
+        /* 左侧栏样式 */
+        .sidebar {
+            width: 200px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 20px;
+            align-self: flex-start;
+        }
+        
+        .sidebar.hidden {
+            display: none;
+        }
+        
+        .sidebar-title {
+            color: #2c3e50;
+            font-size: 16px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        /* 学生选择器样式 */
+        .student-selector {
+            margin-bottom: 20px;
+        }
+        
+        .student-selector label {
+            display: block;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .student-selector select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        /* 主内容区样式 */
+        .main-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+            font-size: 24px;
+        }
+        
+        header p {
+            font-size: 14px;
+            margin: 0;
+        }
+        
+        .file-info {
+            background-color: #e8f4f8;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .file-info.hidden {
+            display: none;
+        }
+        
+        .sheet-selector {
+            background-color: #e8f4f8;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .sheet-selector.hidden {
+            display: none;
+        }
+        
+        .sheet-selector select {
+            margin-left: 10px;
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .actions {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin: 0;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            display: none;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .error.show {
+            display: block;
+        }
+        
+        .data-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            max-height: calc(100vh - 250px);
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            display: none;
+        }
+        
+        .data-table.show {
+            display: table;
+        }
+        
+        .data-table th {
+            background-color: #34495e;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid #ecf0f1;
+            white-space: nowrap;
+        }
+        
+        .data-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            display: none;
+        }
+        
+        .no-data.show {
+            display: block;
+        }
+        
+        /* 顶部容器粘性定位 */
+        .top-container {
+            position: sticky;
+            top: 0;
+            background-color: #f5f5f5;
+            padding: 10px 0;
+            margin-bottom: 20px;
+            z-index: 100;
+            border-bottom: 1px solid #e0e0e0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* overall数据样式 */
+        .overall-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .overall-title {
+            color: #2c3e50;
+            font-size: 18px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .overall-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .overall-item {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .overall-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .overall-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧栏 -->
+        <div class="sidebar hidden">
+            <div class="sidebar-title">学生选择</div>
+            <div class="student-selector">
+                <label for="studentSelect">选择学生:</label>
+                <select id="studentSelect" disabled>
+                    <option value="">-- 请选择 --</option>
+                </select>
+            </div>
+            
+            <div class="student-selector" style="margin-top: 15px;">
+                <label for="semesterSelect">选择学期:</label>
+                <select id="semesterSelect">
+                    <option value="" disabled selected>请选择学期</option>
+                    <option value="寒假">寒假</option>
+                    <option value="春季">春季</option>
+                    <option value="暑假">暑假</option>
+                    <option value="秋季">秋季</option>
+                </select>
+            </div>
+            
+            <div class="student-selector" style="margin-top: 15px;">
+                <label for="classNameInput">班级名称:</label>
+                <input type="text" id="classNameInput" placeholder="请输入班级名称" style="width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+            </div>
+            <!-- 添加一个确定按钮 -->
+             <button id="confirmBtn" style="margin-top: 15px; background-color: #3498db; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">确定</button>
+        </div>
+        
+        <!-- 主内容区 -->
+        <div class="main-content">          
+            <div class="top-container">
+                <div class="file-info hidden" id="fileInfo">
+                    <strong>当前文件:</strong> <span id="fileName"></span>
+                </div>
+                
+                <div class="actions">
+                    <button id="selectFileBtn">选择Excel文件</button>
+                    <button id="backToSheetBtn" style="margin-left: 10px; background-color: #95a5a6; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; display: none;">返回查看试卷数据</button>
+                    <button id="downloadReport" style="margin-left: 10px; background-color: #95a5a6; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; display: none;">下载成绩分析报告</button>
+                </div>
+                
+                <div class="sheet-selector hidden" id="sheetSelector">
+                    <strong>选择工作表:</strong>
+                    <select id="sheetSelect"></select>
+                </div>
+            </div>
+            
+            <div class="loading" id="loading">正在解析文件...</div>
+            
+            <div class="error" id="error"></div>
+            
+            <!-- 按学生显示数据的容器 -->
+            <div class="student-data-container" id="studentDataContainer" style="display: none;">
+                <h2 id="studentNameHeader"></h2>
+            </div>
+            
+            <!-- 原始的按sheet显示数据的容器 -->
+            <div class="sheet-data-container" id="sheetDataContainer">
+                <div class="data-container">
+                    <table class="data-table" id="dataTable">
+                        <thead id="tableHead"></thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                    <div class="no-data" id="noData">暂无数据</div>
+                </div>
+                
+                <div class="overall-container" id="overallContainer"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const selectFileBtn = document.getElementById('selectFileBtn');
+            const fileInfo = document.getElementById('fileInfo');
+            const fileName = document.getElementById('fileName');
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const dataTable = document.getElementById('dataTable');
+            const tableHead = document.getElementById('tableHead');
+            const tableBody = document.getElementById('tableBody');
+            const noData = document.getElementById('noData');
+            const sheetSelector = document.getElementById('sheetSelector');
+            const sheetSelect = document.getElementById('sheetSelect');
+            const overallContainer = document.getElementById('overallContainer');
+            const studentSelect = document.getElementById('studentSelect');
+            const studentDataContainer = document.getElementById('studentDataContainer');
+            const studentNameHeader = document.getElementById('studentNameHeader');
+            const sheetDataContainer = document.getElementById('sheetDataContainer');
+            
+            // 保存所有sheet数据
+            let allSheetsData = [];
+            // 保存所有学生数据
+            let allStudentData = {};
+            // 保存学生姓名列表
+            let studentNames = [];
+            // 保存Excel文件路径
+            let excelFilePath = '';
+            
+            // 为顶部返回按钮添加点击事件
+            document.getElementById('backToSheetBtn').addEventListener('click', () => {
+                // 显示默认的sheet数据
+                renderData(allSheetsData[0]);
+                studentDataContainer.style.display = 'none';
+                sheetDataContainer.style.display = 'block';
+                // 隐藏返回按钮
+                document.getElementById('backToSheetBtn').style.display = 'none';
+                // 重置学生选择器
+                studentSelect.value = '';
+            });
+
+            document.getElementById('confirmBtn').addEventListener('click', async () => {
+                // 获取班级名称和学期选择
+                const className = document.getElementById('classNameInput').value.trim();
+                const semesterSelect = document.getElementById('semesterSelect');
+                const semester = semesterSelect.value;
+                
+                // 检查班级名称是否非空且学期是否已选择
+                if (className && semester) {
+                    // 显示下载按钮
+                    document.getElementById('downloadReport').style.display = 'inline-block';
+                } else {
+                    // 隐藏下载按钮
+                    document.getElementById('downloadReport').style.display = 'none';
+                    // 显示错误信息
+                    error.textContent = '请输入班级名称和选择学期';
+                    error.style.backgroundColor = '#ffebee';
+                    error.style.color = '#c62828';
+                    error.classList.add('show');
+                }
+            });
+            
+            // 为下载报告按钮添加点击事件
+            document.getElementById('downloadReport').addEventListener('click', async () => {
+                try {
+                    // 获取班级名称
+                    const className = document.getElementById('classNameInput').value.trim();
+                    const semester = document.getElementById('semesterSelect').value.trim();
+                    
+                    // 验证班级名称是否为空
+                    if (!className || semesterSelect.value === '请选择学期') {
+                        error.textContent = '请输入班级名称和选择学期';
+                        error.style.backgroundColor = '#ffebee';
+                        error.style.color = '#c62828';
+                        error.classList.add('show');
+                        return;
+                    }
+                    
+                    // 显示加载状态
+                    loading.classList.add('show');
+                    
+                    // 准备学生数据（如果有选中的学生）
+                    const selectedStudent = studentSelect.value;
+                    let studentData = {};
+                    
+                    if (selectedStudent) {
+                        // 获取选中学生的数据
+                        const studentInfo = allStudentData[selectedStudent]?.[0];
+                        if (studentInfo) {
+                            studentData = {
+                                studentName: selectedStudent,
+                                className: className,
+                                scores: allStudentData[selectedStudent].map(item => ({
+                                    sheetName: item.sheetName,
+                                    score: item.studentScore.总分,
+                                    average: item.overallData.平均分
+                                })),
+                                averages: allStudentData[selectedStudent].map(item => item.overallData),
+                                excelFilePath: excelFilePath
+                            };
+                        }
+                    } else {
+                        // 默认数据
+                        studentData = {
+                            studentName: '学生',
+                            className: className,
+                            semester: semester,
+                            scores: [],
+                            averages: [],
+                            excelFilePath: excelFilePath
+                        };
+                    }
+                    
+                    // 调用IPC接口生成PDF
+                    const result = await window.electronAPI.generatePDF(studentData);
+                    
+                    // 隐藏加载状态
+                    loading.classList.remove('show');
+                    
+                    if (result.success) {
+                        // 显示成功消息
+                        error.textContent = `PDF生成成功：${result.filePath}`;
+                        error.style.backgroundColor = '#e8f5e8';
+                        error.style.color = '#2e7d32';
+                        error.classList.add('show');
+                        
+                        // 3秒后隐藏成功消息
+                        setTimeout(() => {
+                            error.classList.remove('show');
+                        }, 3000);
+                    } else {
+                        // 显示错误消息
+                        error.textContent = `PDF生成失败：${result.error}`;
+                        error.style.backgroundColor = '#ffebee';
+                        error.style.color = '#c62828';
+                        error.classList.add('show');
+                    }
+                } catch (err) {
+                    loading.classList.remove('show');
+                    error.textContent = `操作失败：${err.message}`;
+                    error.style.backgroundColor = '#ffebee';
+                    error.style.color = '#c62828';
+                    error.classList.add('show');
+                }
+            });
+            
+            // 选择文件按钮点击事件
+            selectFileBtn.addEventListener('click', async () => {
+                try {
+                    // 调用Electron API选择文件
+                    const filePath = await window.electronAPI.selectExcelFile();
+                    
+                    if (!filePath) {
+                        return;
+                    }
+                    
+                    // 保存Excel文件路径
+                    excelFilePath = filePath;
+                    
+                    // 显示加载状态
+                    loading.classList.add('show');
+                    error.classList.remove('show');
+                    dataTable.classList.remove('show');
+                    noData.classList.remove('show');
+                    sheetSelector.classList.add('hidden');
+                    
+                    // 解析Excel文件
+                    const result = await window.electronAPI.parseExcelFile(filePath);
+                    
+                    // 隐藏加载状态
+                    loading.classList.remove('show');
+                    
+                    if (result.success) {
+                        // 保存所有sheet数据
+                        allSheetsData = result.data.sheets;
+                        // 保存所有学生数据
+                        allStudentData = result.data.studentsData;
+
+                        // 保存学生姓名列表
+                        studentNames = result.data.studentNames;
+                        
+                        // 渲染sheet选择器
+                        renderSheetSelector();
+                        
+                        // 渲染学生选择器
+                        renderStudentSelector();
+                        
+                        // 显示侧边栏
+                        document.querySelector('.sidebar').classList.remove('hidden');
+                        
+                        // 渲染第一个sheet的数据
+                        renderData(allSheetsData[0]);
+                    } else {
+                        // 显示错误信息
+                        error.textContent = `解析失败: ${result.error}`;
+                        error.classList.add('show');
+                    }
+                } catch (err) {
+                    loading.classList.remove('show');
+                    error.textContent = `操作失败: ${err.message}`;
+                    error.classList.add('show');
+                }
+            });
+            
+            // 渲染sheet选择器
+            function renderSheetSelector() {
+                // 清空现有选项
+                sheetSelect.innerHTML = '';
+                
+                // 添加sheet选项
+                allSheetsData.forEach((sheet, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = `${sheet.sheetName} (${sheet.studentCount}条记录)`;
+                    sheetSelect.appendChild(option);
+                });
+                
+                // 显示sheet选择器
+                sheetSelector.classList.remove('hidden');
+                
+                // 添加sheet切换事件监听器
+                sheetSelect.addEventListener('change', (e) => {
+                    const selectedIndex = parseInt(e.target.value);
+                    renderData(allSheetsData[selectedIndex]);
+                });
+            }
+            
+            // 渲染学生选择器
+            function renderStudentSelector() {
+                // 清空现有选项
+                studentSelect.innerHTML = '';
+                
+                // 添加默认选项
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = '-- 请选择 --';
+                studentSelect.appendChild(defaultOption);
+                
+                // 添加学生选项
+                studentNames.forEach(studentName => {
+                    const option = document.createElement('option');
+                    option.value = studentName;
+                    option.textContent = studentName;
+                    studentSelect.appendChild(option);
+                });
+                
+                // 启用学生选择器
+                studentSelect.disabled = false;
+                
+                // 添加学生选择事件监听器
+                studentSelect.addEventListener('change', (e) => {
+                    const selectedStudent = e.target.value;
+                    if (selectedStudent) {
+                        // 显示该学生的数据
+                        renderStudentData(selectedStudent);
+                    } else {
+                        // 显示默认的sheet数据
+                        renderData(allSheetsData[0]);
+                        studentDataContainer.style.display = 'none';
+                        sheetDataContainer.style.display = 'block';
+                    }
+                });
+            }
+            
+            // 渲染数据
+            function renderData(sheetData) {
+                const { studentScores, overallData } = sheetData;
+                
+                if (!studentScores || studentScores.length === 0) {
+                    noData.classList.add('show');
+                    dataTable.classList.remove('show');
+                    overallContainer.innerHTML = '';
+                    return;
+                }
+                
+                noData.classList.remove('show');
+                dataTable.classList.add('show');
+                
+                // 渲染表头
+                renderTableHeader(studentScores[0]);
+                
+                // 渲染表体
+                renderTableBody(studentScores, overallData);
+                
+                // 渲染overall数据
+                renderOverallData(overallData);
+            }
+            
+            // 渲染overall数据
+            function renderOverallData(overallData) {
+                if (!overallData) {
+                    overallContainer.innerHTML = '';
+                    return;
+                }
+                
+                let overallHTML = '<div class="overall-title">考试总体数据</div>';
+                overallHTML += '<div class="overall-grid">';
+                
+                // 遍历overall数据的所有属性
+                Object.entries(overallData).forEach(([key, value]) => {
+                    // 格式化数值
+                    const displayValue = typeof value === 'number' ? value.toFixed(2) : value;
+                    
+                    overallHTML += `
+                        <div class="overall-item">
+                            <div class="overall-label">${key}</div>
+                            <div class="overall-value">${displayValue}</div>
+                        </div>
+                    `;
+                });
+                
+                overallHTML += '</div>';
+                overallContainer.innerHTML = overallHTML;
+            }
+            
+            // 渲染学生数据
+            function renderStudentData(studentName) {
+                // 获取该学生在所有sheet中的数据
+                const studentData = allStudentData[studentName];
+                
+                if (!studentData || studentData.length === 0) {
+                    studentDataContainer.innerHTML = `<h2>${studentName}</h2><p>暂无该学生的数据</p>`;
+                    studentDataContainer.style.display = 'block';
+                    sheetDataContainer.style.display = 'none';
+                    // 显示顶部返回按钮
+                    document.getElementById('backToSheetBtn').style.display = 'inline-block';
+                    return;
+                }
+                
+                // 隐藏sheet数据容器，显示学生数据容器
+                sheetDataContainer.style.display = 'none';
+                studentDataContainer.style.display = 'block';
+                
+                // 显示顶部返回按钮
+                document.getElementById('backToSheetBtn').style.display = 'inline-block';
+                
+                // 设置学生姓名标题
+                studentNameHeader.textContent = `${studentName} - 各考试成绩汇总`;
+                
+                // 渲染综合表格
+                let studentHTML = '<div class="data-container" style="margin-top: 20px;"><table class="data-table show"><thead><tr>';
+                
+                // 定义表头
+                const headers = [
+                    '考试名称',
+                    '老师',
+                    '个人总分',
+                    '试卷总分',
+                    '平均分',
+                    '中间分',
+                    '最高分',
+                    '最低分',
+                    '标准分'
+                ];
+                
+                // 渲染表头
+                headers.forEach(header => {
+                    studentHTML += `<th>${header}</th>`;
+                });
+                studentHTML += '</tr></thead><tbody>';
+                
+                // 遍历该学生在所有sheet中的数据，生成表格行
+                studentData.forEach(item => {
+                    const { sheetName, studentScore, overallData } = item;
+                    
+                    // 获取学生总分
+                    const studentTotalScore = studentScore["总分"] || 0;
+                    
+                    // 获取老师信息
+                    const teacher = studentScore["老师"] || '';
+                    
+                    // 获取试卷总分
+                    const paperTotalScore = overallData["试卷总分"] || 0;
+                    
+                    // 获取考试总体数据
+                    const averageScore = overallData["平均分"] || 0;
+                    const middleScore = overallData["中间分"] || 0;
+                    const highestScore = overallData["最高分"] || 0;
+                    const lowestScore = overallData["最低分"] || 0;
+                    
+                    // 获取学生标准分
+                    const standardScore = studentScore["标准分"] || 0;
+                    
+                    // 渲染表格行
+                    studentHTML += '<tr>';
+                    studentHTML += `<td>${sheetName}</td>`;
+                    studentHTML += `<td>${teacher}</td>`;
+                    
+                    // 根据学生总分与平均分的比较结果，添加样式和箭头
+                    let totalScoreHTML;
+                    const displayTotalScore = typeof studentTotalScore === 'number' ? studentTotalScore.toFixed(2) : studentTotalScore;
+                    if (typeof studentTotalScore === 'number' && typeof averageScore === 'number') {
+                        if (studentTotalScore > averageScore) {
+                            // 总分高于平均分：绿色，向上箭头
+                            totalScoreHTML = `<td style="color: green; font-weight: 600;">${displayTotalScore} <span style="font-size: 12px;">↑</span></td>`;
+                        } else if (studentTotalScore < averageScore) {
+                            // 总分低于平均分：红色，向下箭头
+                            totalScoreHTML = `<td style="color: red; font-weight: 600;">${displayTotalScore} <span style="font-size: 12px;">↓</span></td>`;
+                        } else {
+                            // 总分等于平均分：默认样式
+                            totalScoreHTML = `<td>${displayTotalScore}</td>`;
+                        }
+                    } else {
+                        // 无法比较：默认样式
+                        totalScoreHTML = `<td>${displayTotalScore}</td>`;
+                    }
+                    studentHTML += totalScoreHTML;
+                    
+                    studentHTML += `<td>${typeof paperTotalScore === 'number' ? paperTotalScore.toFixed(2) : paperTotalScore}</td>`;
+                    studentHTML += `<td>${typeof averageScore === 'number' ? averageScore.toFixed(2) : averageScore}</td>`;
+                    studentHTML += `<td>${typeof middleScore === 'number' ? middleScore.toFixed(2) : middleScore}</td>`;
+                    studentHTML += `<td>${typeof highestScore === 'number' ? highestScore.toFixed(2) : highestScore}</td>`;
+                    studentHTML += `<td>${typeof lowestScore === 'number' ? lowestScore.toFixed(2) : lowestScore}</td>`;
+                    studentHTML += `<td>${typeof standardScore === 'number' ? standardScore.toFixed(2) : standardScore}</td>`;
+                    studentHTML += '</tr>';
+                });
+                
+                studentHTML += '</tbody></table></div>';
+                
+                // 将生成的HTML插入到学生数据容器中
+                studentDataContainer.innerHTML = `<h2 id="studentNameHeader">${studentName} - 各考试成绩汇总</h2>` + studentHTML;
+            }
+            
+            // 渲染表头
+            function renderTableHeader(firstStudentScore) {
+                const headers = Object.keys(firstStudentScore);
+                let headerHTML = '<tr>';
+                headers.forEach(header => {
+                    headerHTML += `<th>${header}</th>`;
+                });
+                headerHTML += '</tr>';
+                tableHead.innerHTML = headerHTML;
+            }
+            
+            // 渲染表体
+            function renderTableBody(studentScores, overallData) {
+                let bodyHTML = '';
+                
+                studentScores.forEach(student => {
+                    bodyHTML += '<tr>';
+                    
+                    Object.entries(student).forEach(([key, value]) => {
+                        // 格式化数字
+                        let displayValue;
+                        if (typeof value === 'number') {
+                            // 学生序号和排名显示为整数，其他数字显示两位小数
+                            if (key === '排名') {
+                                displayValue = value;
+                            } else {
+                                displayValue = value.toFixed(2);
+                            }
+                        } else {
+                            displayValue = value;
+                        }
+                        
+                        // 对总分添加条件样式
+                        if (key === '总分') {
+                            const studentTotalScore = value;
+                            const averageScore = overallData?.["平均分"] || 0;
+                            let tdHTML;
+                            
+                            if (typeof studentTotalScore === 'number' && typeof averageScore === 'number') {
+                                if (studentTotalScore > averageScore) {
+                                    // 总分高于平均分：绿色，向上箭头
+                                    tdHTML = `<td style="color: green; font-weight: 600;">${displayValue} <span style="font-size: 12px;">↑</span></td>`;
+                                } else if (studentTotalScore < averageScore) {
+                                    // 总分低于平均分：红色，向下箭头
+                                    tdHTML = `<td style="color: red; font-weight: 600;">${displayValue} <span style="font-size: 12px;">↓</span></td>`;
+                                } else {
+                                    // 总分等于平均分：默认样式
+                                    tdHTML = `<td>${displayValue}</td>`;
+                                }
+                            } else {
+                                // 无法比较：默认样式
+                                tdHTML = `<td>${displayValue}</td>`;
+                            }
+                            
+                            bodyHTML += tdHTML;
+                        } else {
+                            // 其他字段使用默认样式
+                            bodyHTML += `<td>${displayValue}</td>`;
+                        }
+                    });
+                    
+                    bodyHTML += '</tr>';
+                });
+                
+                tableBody.innerHTML = bodyHTML;
+            }
+        });
+    </script>
+</body>
+</html>
