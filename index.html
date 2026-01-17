@@ -302,6 +302,11 @@
                     <option value="秋季">秋季</option>
                 </select>
             </div>
+
+            <div class="year-selector" style="margin-top: 15px;">
+                <label for="yearInput">选择年份:</label>
+                <input type="text" id="yearInput" placeholder="请输入年份" style="width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+            </div>
             
             <div class="student-selector" style="margin-top: 15px;">
                 <label for="classNameInput">班级名称:</label>
@@ -395,20 +400,21 @@
             });
 
             document.getElementById('confirmBtn').addEventListener('click', async () => {
-                // 获取班级名称和学期选择
+                // 获取班级名称和学期选择&年份
+                const year = document.getElementById('yearInput').value.trim();
                 const className = document.getElementById('classNameInput').value.trim();
                 const semesterSelect = document.getElementById('semesterSelect');
                 const semester = semesterSelect.value;
                 
-                // 检查班级名称是否非空且学期是否已选择
-                if (className && semester) {
+                // 检查班级名称是否非空且学期是否已选择&年份是否非空
+                if (className && semester && year) {
                     // 显示下载按钮
                     document.getElementById('downloadReport').style.display = 'inline-block';
                 } else {
                     // 隐藏下载按钮
                     document.getElementById('downloadReport').style.display = 'none';
                     // 显示错误信息
-                    error.textContent = '请输入班级名称和选择学期';
+                    error.textContent = '请输入班级名称和选择学期&年份';
                     error.style.backgroundColor = '#ffebee';
                     error.style.color = '#c62828';
                     error.classList.add('show');
@@ -418,13 +424,14 @@
             // 为下载报告按钮添加点击事件
             document.getElementById('downloadReport').addEventListener('click', async () => {
                 try {
-                    // 获取班级名称
+                    // 获取班级名称、学期和年份
                     const className = document.getElementById('classNameInput').value.trim();
-                    const semester = document.getElementById('semesterSelect').value.trim();
+                    const semester = document.getElementById('semesterSelect').value;
+                    const year = document.getElementById('yearInput').value.trim();
                     
                     // 验证班级名称是否为空
-                    if (!className || semesterSelect.value === '请选择学期') {
-                        error.textContent = '请输入班级名称和选择学期';
+                    if (!className || !semester || !year) {
+                        error.textContent = '请输入班级名称、选择学期和年份';
                         error.style.backgroundColor = '#ffebee';
                         error.style.color = '#c62828';
                         error.classList.add('show');
@@ -445,6 +452,8 @@
                             studentData = {
                                 studentName: selectedStudent,
                                 className: className,
+                                semester: semester,
+                                year: year,
                                 scores: allStudentData[selectedStudent].map(item => ({
                                     sheetName: item.sheetName,
                                     score: item.studentScore.总分,
@@ -460,6 +469,7 @@
                             studentName: '学生',
                             className: className,
                             semester: semester,
+                            year: year,
                             scores: [],
                             averages: [],
                             excelFilePath: excelFilePath

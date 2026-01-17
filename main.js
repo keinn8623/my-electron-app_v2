@@ -85,7 +85,7 @@ ipcMain.handle('parse-excel-file', async (event, filePath) => {
 
 // 处理PDF生成
 ipcMain.handle('generate-pdf', async (event, studentData) => {
-    const { className, semester } = studentData;
+    const { className, semester, year } = studentData;
     try {
         const fs = require('fs');
         const path = require('path');
@@ -145,8 +145,19 @@ ipcMain.handle('generate-pdf', async (event, studentData) => {
                 questionTypeCount = Object.values(accumulatedZeroScoreTypes[name]);
             }
 
+            console.log("name:", name)
+            console.log("questionTypes:", questionTypes)
+            console.log("questionTypeCount:", questionTypeCount)
+            console.log("="*30)
+
+            // 计算logo文件的绝对路径
+            const path = require('path');
+            const logoPath = path.join(__dirname, '卓鸣logo 最终转曲-06.png').replace(/\\/g, '/');
+            const watermarkPath = path.join(__dirname, '卓鸣logo 最终转曲-05.png').replace(/\\/g, '/');
+            
             const templateData = {
                 studentName: name,
+                watermarkPath: watermarkPath,
                 studentsData: data ? data : {},
                 examNames: examNames,
                 studentScores: studentScores,
@@ -157,6 +168,9 @@ ipcMain.handle('generate-pdf', async (event, studentData) => {
                 standardScores: standardScores,
                 className: className,
                 semester: semester,
+                year: year,
+                now: new Date(),
+                logoPath: logoPath
             };
 
             // 使用nunjucks渲染模板

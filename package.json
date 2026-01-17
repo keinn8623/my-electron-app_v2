@@ -1,6 +1,6 @@
 {
   "name": "student-score-analysis-system",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "学生成绩分析系统",
   "main": "main.js",
   "scripts": {
