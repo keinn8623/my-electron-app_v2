@@ -140,15 +140,16 @@ ipcMain.handle('generate-pdf', async (event, studentData) => {
             // 根据学生处理题型细分
             let questionTypes = [];
             let questionTypeCount = [];
-            if (accumulatedZeroScoreTypes[name]) {
-                questionTypes = Object.keys(accumulatedZeroScoreTypes[name]);
-                questionTypeCount = Object.values(accumulatedZeroScoreTypes[name]);
+            let questionTypesSecond = [];
+            let questionTypeCountSecond = [];
+            
+            const result = processAccumulatedZeroScoreTypes(accumulatedZeroScoreTypes, name);
+            if (result) {
+                questionTypes = result.questionTypes || [];
+                questionTypeCount = result.questionTypeCount || [];
+                questionTypesSecond = result.questionTypesSecond || [];
+                questionTypeCountSecond = result.questionTypeCountSecond || [];
             }
-
-            console.log("name:", name)
-            console.log("questionTypes:", questionTypes)
-            console.log("questionTypeCount:", questionTypeCount)
-            console.log("="*30)
 
             // 计算logo文件的绝对路径
             const path = require('path');
@@ -165,11 +166,12 @@ ipcMain.handle('generate-pdf', async (event, studentData) => {
                 totalAverageRate: sheets.totalAverageRate,
                 questionTypes: questionTypes,
                 questionTypeCount: questionTypeCount,
+                questionTypesSecond: questionTypesSecond,
+                questionTypeCountSecond: questionTypeCountSecond,
                 standardScores: standardScores,
                 className: className,
                 semester: semester,
                 year: year,
-                now: new Date(),
                 logoPath: logoPath
             };
 
@@ -234,3 +236,27 @@ ipcMain.handle('generate-pdf', async (event, studentData) => {
         };
     }
 });
+
+const processAccumulatedZeroScoreTypes = (accumulatedZeroScoreTypes, name) => {
+    const BOUNDARY = 40;
+    let questionTypes = [];
+    let questionTypeCount = [];
+    let questionTypesSecond = [];
+    let questionTypeCountSecond = [];
+    if (accumulatedZeroScoreTypes[name]) {
+        questionTypes = Object.keys(accumulatedZeroScoreTypes[name]);
+        questionTypeCount = Object.values(accumulatedZeroScoreTypes[name]);
+    }
+    if (questionTypes.length == questionTypeCount.length && questionTypes.length <= BOUNDARY) {
+        return { questionTypes, questionTypeCount };
+    } else if (questionTypes.length == questionTypeCount.length && questionTypes.length > BOUNDARY) {
+        const middleIndex = Math.ceil(questionTypes.length / 2);
+        questionTypesSecond = questionTypes.slice(middleIndex);
+        questionTypeCountSecond = questionTypeCount.slice(middleIndex);
+        questionTypes = questionTypes.slice(0, middleIndex);
+        questionTypeCount = questionTypeCount.slice(0, middleIndex);
+        return { questionTypes, questionTypeCount, questionTypesSecond, questionTypeCountSecond };
+
+    }
+    return;
+}

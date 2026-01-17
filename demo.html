@@ -66,23 +66,26 @@
         .head-size {
             font-size: 10.5px;
         }
+
         .footer {
             background: linear-gradient(135deg, #cf962c 0%, #fd7e14 100%);
         }
-        
     </style>
 </head>
 
 <body>
-    <div class="watermark" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999;">
-        <img class="logo" src="{{watermarkPath}}" alt="logo" style="width: 300px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(45deg); opacity: 0.6; z-index: 9999;">
+    <div class="watermark"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999;">
+        <img class="logo" src="{{watermarkPath}}" alt="logo"
+            style="width: 300px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(45deg); opacity: 0.4; z-index: 9999;">
     </div>
 
     <div class="container-fluid">
         <!-- 页面头部 -->
         <div class="row">
             <div class="col-12 header text-center">
-                <img class="logo" src="{{logoPath}}" alt="logo" style="width: 200px; position: absolute; top: 10px; left: 5px; z-index: 1000;">
+                <img class="logo" src="{{logoPath}}" alt="logo"
+                    style="width: 200px; position: absolute; top: 10px; left: 5px; z-index: 1000;">
                 <h4>{{className}}成绩分析报告</h4>
                 <p class="lead">{{studentName}} | 分析周期：{{year}}{{semester}}{{examNames.length}}次测验</p>
             </div>
@@ -102,6 +105,8 @@
                         <div id="studentsData">{{studentsData}}</div>
                         <div id="questionTypes">{{questionTypes}}</div>
                         <div id="questionTypeCount">{{questionTypeCount}}</div>
+                        <div id="questionTypesSecond">{{questionTypesSecond}}</div>
+                        <div id="questionTypeCountSecond">{{questionTypeCountSecond}}</div>
                         <div id="standardScores">{{standardScores}}</div>
                     </div>
 
@@ -195,7 +200,7 @@
         </div>
 
         <!-- 详细数据与差异分析表格 -->
-        <div class="row">
+        <div class="row" style="break-inside: avoid;">
             <div class="col-12">
                 <div class="card">
                     <div class="card-header bg-white d-flex justify-content-between align-items-center">
@@ -365,11 +370,23 @@
                         <h5 class="section-header"> 错误题型综合分析</h5>
                     </div>
                     <div class="card-body">
-                        <canvas id="barChart" height="100" style="width: 95%; height: 300px; margin: 0 auto;"></canvas>
+                        <canvas id="barChart" height="100" style="width: 95%; height: 850px; margin: 0 auto;"></canvas>
                     </div>
                 </div>
             </div>
         </div>
+        {% if questionTypesSecond.length > 0 %}
+        <div class="row" id="barChartSecondRow">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <canvas id="barChartSecond" height="100"
+                            style="width: 95%; height: 850px; margin: 0 auto;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- 奥数专项题型分析 -->
         <!-- <div class="row">
@@ -590,11 +607,15 @@
 
 
             // 创建一个柱状图
-            const barCtx = document.getElementById('barChart').getContext('2d');
+
+
             // 从DOM元素中读取questionTypes数据
+
+
             const questionTypes = document.getElementById('questionTypes').textContent.split(',').map(type => type.trim());
             // 从DOM元素中读取questionTypeCount数据
             const questionTypeCount = document.getElementById('questionTypeCount').textContent.split(',').map(count => parseInt(count.trim()));
+            const barCtx = document.getElementById('barChart').getContext('2d');
 
             // 只有当有数据时才创建图表
             if (questionTypes.length > 0) {
@@ -636,7 +657,7 @@
                                 align: 'end',
                                 anchor: 'end',
                                 // 格式化显示内容，例如添加单位
-                                formatter: function(value) {
+                                formatter: function (value) {
                                     return value + '个';
                                 }
                             }
@@ -650,7 +671,7 @@
                                 ticks: {
                                     stepSize: 1,
                                     precision: 0,
-                                    callback: function(value) {
+                                    callback: function (value) {
                                         return value === parseInt(value) ? value : '';
                                     }
                                 }
@@ -669,6 +690,100 @@
                         }
                     }
                 });
+                // 从DOM元素中读取questionTypesSecond数据
+                const questionTypesSecondElement = document.getElementById('questionTypesSecond');
+                const questionTypeCountSecondElement = document.getElementById('questionTypeCountSecond');
+                const barChartSecondElement = document.getElementById('barChartSecond');
+                
+                if (questionTypesSecondElement && questionTypeCountSecondElement && barChartSecondElement) {
+                    let questionTypesSecond = [];
+                    let questionTypeCountSecond = [];
+                    
+                    // 处理空字符串的情况
+                    if (questionTypesSecondElement.textContent.trim()) {
+                        questionTypesSecond = questionTypesSecondElement.textContent.split(',').map(type => type.trim());
+                    }
+                    
+                    if (questionTypeCountSecondElement.textContent.trim()) {
+                        questionTypeCountSecond = questionTypeCountSecondElement.textContent.split(',').map(count => parseInt(count.trim()));
+                    }
+                    
+                    const barCtxSecond = barChartSecondElement.getContext('2d');
+                    
+                    if (questionTypesSecond.length > 0 && questionTypeCountSecond.length > 0) {
+                        new Chart(barCtxSecond, {
+                            type: 'bar',
+                            data: {
+                                labels: questionTypesSecond,
+                                datasets: [
+                                    {
+                                        label: '错误题型个数',
+                                        data: questionTypeCountSecond,
+                                        backgroundColor: 'rgba(253, 126, 20, 0.2)',
+                                        borderColor: '#fd7e14',
+                                        borderWidth: 2
+                                    }
+                                ]
+                            },
+                            options: {
+                                indexAxis: 'y', // 将柱状图转为横向
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                devicePixelRatio: 2,
+                                plugins: {
+                                    legend: {
+                                        position: 'top',
+                                    },
+                                    tooltip: {
+                                        mode: 'index'
+                                    },
+                                    datalabels: {
+                                        display: true, // 显示标签
+                                        color: 'black', // 字体颜色
+                                        font: {
+                                            weight: 'bold',
+                                            size: 14
+                                        },
+                                        // 位置：'start', 'end', 'center', 'top', 'bottom'
+                                        // 对于横向柱状图，'end' 通常在柱右侧，'start' 在柱左侧
+                                        align: 'end',
+                                        anchor: 'end',
+                                        // 格式化显示内容，例如添加单位
+                                        formatter: function (value) {
+                                            return value + '个';
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    x: {
+                                        beginAtZero: true,
+                                        grid: {
+                                            display: true
+                                        },
+                                        ticks: {
+                                            stepSize: 1,
+                                            precision: 0,
+                                            callback: function (value) {
+                                                return value === parseInt(value) ? value : '';
+                                            }
+                                        }
+                                    },
+                                    y: {
+                                        grid: {
+                                            display: false
+                                        },
+                                        ticks: {
+                                            maxTicksLimit: null, // 不限制标签数量
+                                            autoSkip: false, // 不自动跳过标签
+                                            maxRotation: 0, // 标签不旋转
+                                            minRotation: 0 // 标签不旋转
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
             } else {
                 // 如果没有数据，显示提示信息
                 const barChartContainer = document.getElementById('barChart').parentElement;
@@ -682,7 +797,7 @@
             // // 从DOM元素中读取standardScores数据
             // const standardScores = document.getElementById('standardScores').textContent.split(',').map(count => parseInt(count.trim()));
             // const standardScoresValue = Math.max(...standardScores, ...standardScores.map(Math.abs));
-            
+
             //     const padding = 1.5;
             //     const yAxisMax = standardScoresValue * padding;
             //     const yAxisMin = -(standardScoresValue * padding);
@@ -742,8 +857,8 @@
             //             }
             //         }
             //     });
-            
-            
+
+
 
 
 
@@ -760,7 +875,7 @@
             <div class="row">
                 <div style=" display:inline-block; justify-content: center; ">
                     <p style="font-size: 16px; margin-top: 0;">卓越教学，一鸣惊人！</p>
-                    <p style="font-size: 14px;" >卓鸣课堂重庆分校教研部编制</p>
+                    <p style="font-size: 14px;">卓鸣课堂重庆分校教研部编制</p>
                 </div>
             </div>
         </div>
